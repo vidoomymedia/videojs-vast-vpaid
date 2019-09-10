@@ -167,7 +167,7 @@ var vastUtil = {
    * @param vpaidFlashLoaderPath the path to the vpaidFlashLoader swf obj.
    */
   runFlashSupportCheck: function runFlashSupportCheck(vpaidFlashLoaderPath) {
-    VPAIDFLASHClient.runFlashTest({data: vpaidFlashLoaderPath});
+    //VPAIDFLASHClient.runFlashTest({data: vpaidFlashLoaderPath});
   }
 
 };
