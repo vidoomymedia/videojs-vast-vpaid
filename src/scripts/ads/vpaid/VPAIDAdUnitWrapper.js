@@ -148,7 +148,8 @@ VPAIDAdUnitWrapper.prototype.handshakeVersion = function (version, cb) {
 
 /* jshint maxparams:6 */
 VPAIDAdUnitWrapper.prototype.initAd = function (width, height, viewMode, desiredBitrate, adUnitData, cb) {
-  this.waitForEvent('AdLoaded', cb);
+  //this.waitForEvent('AdLoaded', cb);
+  cb();
   this._adUnit.initAd(width, height, viewMode, desiredBitrate, adUnitData);
 };
 
