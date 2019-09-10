@@ -4,7 +4,7 @@ var MimeTypes = require('../../utils/mimetypes');
 
 var VASTError = require('../vast/VASTError');
 
-var VPAIDFLASHClient = require('VPAIDFLASHClient/js/VPAIDFLASHClient');
+var VPAIDFLASHClient = require('../../../../bower_components/VPAIDFLASHClient/js/VPAIDFLASHClient.js');
 
 var utilities = require('../../utils/utilityFunctions');
 var dom = require('../../utils/dom');

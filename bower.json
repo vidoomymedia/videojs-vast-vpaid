@@ -10,8 +10,8 @@
     "url": "https://github.com/MailOnline/videojs-vast-vpaid"
   },
   "main": [
-    "bin/videojs-vast-vpaid.min.js",
-    "bin/videojs-vast-vpaid.min.css"
+    "bin/videojs-vast-vpaid.js",
+    "bin/videojs-vast-vpaid.css"
   ],
   "license": "MIT",
   "keywords": [

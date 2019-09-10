@@ -1,4 +1,5 @@
 'use strict';
+import videojs from '../../../../../videojs/src/js/video';
 
 var baseVideoJsComponent = videojs.getComponent('Component');
 
