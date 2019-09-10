@@ -11,7 +11,7 @@ var AdsLabelFactory = function(baseComponent) {
     /** @constructor */
     init: function init(player, options) {
       options.el = element;
-      baseComponent.call(this, player, options);
+      new baseComponent(player, options);
 
       // We asynchronously reposition the ads label element
       setTimeout(function () {

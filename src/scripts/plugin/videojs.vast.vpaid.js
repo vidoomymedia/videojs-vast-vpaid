@@ -91,8 +91,8 @@ module.exports = function VASTPlugin(options) {
     });
   }
 
-  player.on('vast.firstPlay', tryToPlayPrerollAd);
-
+  // player.on('vast.firstPlay', tryToPlayPrerollAd); we shouldn't await to play another video, we play ad directly
+  tryToPlayPrerollAd();
   player.on('vast.reset', function () {
     //If we are reseting the plugin, we don't want to restore the content
     snapshot = null;

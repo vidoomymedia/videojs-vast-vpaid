@@ -22,7 +22,7 @@ var BlackPosterFactory = function(baseComponent) {
     init: function init(player, options) {
       options.el = element;
       element.className = 'vjs-black-poster';
-      baseComponent.call(this, player, options);
+      new baseComponent(player, options);
 
       var posterImg = player.getChild('posterImage');
 
