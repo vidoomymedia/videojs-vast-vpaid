@@ -2,7 +2,7 @@
 
 var utilities = require('../../utils/utilityFunctions');
 var VPAIDHTML5Tech = require('../vpaid/VPAIDHTML5Tech');
-var VPAIDFlashTech = require('../vpaid/VPAIDFlashTech');
+//var VPAIDFlashTech = require('../vpaid/VPAIDFlashTech');
 var VPAIDFLASHClient = require('../../../../bower_components/VPAIDFLASHClient/js/VPAIDFLASHClient.js');
 
 
@@ -136,7 +136,7 @@ var vastUtil = {
 
   //List of supported VPAID technologies
   VPAID_techs: [
-    VPAIDFlashTech,
+    //VPAIDFlashTech,
     VPAIDHTML5Tech
   ],
 
