@@ -112,6 +112,7 @@ VPAIDAdUnitWrapper.prototype.waitForEvent = function (evtName, cb, context) {
   this.on(evtName, responseListener);
 
   timeoutId = setTimeout(function () {
+    //cb();
     cb(new VASTError("on VPAIDAdUnitWrapper.waitForEvent, timeout while waiting for event '" + evtName + "'"));
     timeoutId = null;
     cb = utilities.noop;
@@ -148,8 +149,8 @@ VPAIDAdUnitWrapper.prototype.handshakeVersion = function (version, cb) {
 
 /* jshint maxparams:6 */
 VPAIDAdUnitWrapper.prototype.initAd = function (width, height, viewMode, desiredBitrate, adUnitData, cb) {
-  //this.waitForEvent('AdLoaded', cb);
-  cb();
+  this.waitForEvent('AdLoaded', cb);
+  //cb();
   this._adUnit.initAd(width, height, viewMode, desiredBitrate, adUnitData);
 };
 

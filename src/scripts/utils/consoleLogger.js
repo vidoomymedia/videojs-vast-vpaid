@@ -11,6 +11,7 @@ function setVerbosity (v)
 
 function handleMsg (method, args)
 {
+    // DROP CONSOLE
     if ((args.length) > 0 && (typeof args[0] === 'string'))
     {
         args[0] = _prefix + args[0];

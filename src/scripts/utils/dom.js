@@ -33,7 +33,7 @@ dom.show = function show(el) {
 dom.hasClass = function hasClass(el, cssClass) {
   var classes, i, len;
 
-  if (utilities.isNotEmptyString(cssClass)) {
+  if (el && utilities.isNotEmptyString(cssClass)) {
     if (el.classList) {
       return el.classList.contains(cssClass);
     }
@@ -53,7 +53,7 @@ dom.hasClass = function hasClass(el, cssClass) {
 dom.addClass = function (el, cssClass) {
   var classes;
 
-  if (utilities.isNotEmptyString(cssClass)) {
+  if (el && utilities.isNotEmptyString(cssClass)) {
     if (el.classList) {
       return el.classList.add(cssClass);
     }
@@ -69,7 +69,7 @@ dom.addClass = function (el, cssClass) {
 dom.removeClass = function (el, cssClass) {
   var classes;
 
-  if (utilities.isNotEmptyString(cssClass)) {
+  if (el && utilities.isNotEmptyString(cssClass)) {
     if (el.classList) {
       return el.classList.remove(cssClass);
     }
