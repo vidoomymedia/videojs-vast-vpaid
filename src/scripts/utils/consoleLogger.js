@@ -1,5 +1,8 @@
+
 /*jshint unused:false */
 "use strict";
+
+var vidoLog = require('../../../../../logger/logger').log;
 
 var _verbosity = 0;
 var _prefix = "[videojs-vast-vpaid] ";
@@ -16,7 +19,8 @@ function handleMsg (method, args)
     {
         args[0] = _prefix + args[0];
     }
-
+    vidoLog(Array.prototype.slice.call(args));
+/*
     if (method.apply)
     {
         method.apply (console, Array.prototype.slice.call(args));
@@ -24,7 +28,7 @@ function handleMsg (method, args)
     else
     {
         method (Array.prototype.slice.call(args));
-    }
+    }*/
 }
 
 function debug ()
