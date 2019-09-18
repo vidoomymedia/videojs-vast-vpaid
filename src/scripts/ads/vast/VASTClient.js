@@ -25,6 +25,195 @@ function VASTClient(options) {
   this.errorURLMacros = [];
 }
 
+VASTClient.prototype.getVASTResponseWithRawXML = function getVASTResponseWithRawXML(adXML, callback) {
+  var that = this;
+
+  var error = sanityCheck(adXML, callback);
+  if (error) {
+    if (utilities.isFunction(callback)) {
+      return callback(error);
+    }
+    throw error;
+  }
+  async.waterfall([
+      this._getVASTAdWithRawXML.bind(this, adXML),
+      buildVASTResponse
+    ],
+    callback);
+
+  /*** Local functions ***/
+  function buildVASTResponse(adsChain, cb) {
+    try {
+      var response = that._buildVASTResponse(adsChain);
+      cb(null, response);
+    } catch (e) {
+      cb(e);
+    }
+  }
+
+  function sanityCheck(adXML, cb) {
+    if (!adXML) {
+      return new VASTError('on VASTClient.getVASTResponseWithRawXML, missing ad XML');
+    }
+
+    if (!utilities.isFunction(cb)) {
+      return new VASTError('on VASTClient.getVASTResponseWithRawXML, missing callback function');
+    }
+  }
+};
+
+
+VASTClient.prototype._getVASTAdWithRawXML = function (adXML, callback) {
+  var that = this;
+  getAdWaterfall(adXML, function (error, vastTree) {
+    var waterfallAds = vastTree && utilities.isArray(vastTree.ads) ? vastTree.ads : null;
+    if (error) {
+      that._trackError(error, waterfallAds);
+      return callback(error, waterfallAds);
+    }
+
+    getAd(waterfallAds.shift(), [], waterfallHandler);
+
+    /*** Local functions ***/
+    function waterfallHandler(error, adChain) {
+      if (error) {
+        that._trackError(error, adChain);
+        if (waterfallAds.length > 0) {
+          getAd(waterfallAds.shift(),[], waterfallHandler);
+        } else {
+          callback(error, adChain);
+        }
+      } else {
+        callback(null, adChain);
+      }
+    }
+  });
+
+  /*** Local functions ***/
+  function getAdWaterfall(adXML, callback) {
+    var requestVastXML = adXML;
+    async.waterfall([
+      function (cb) {
+        cb(null, requestVastXML)
+      },
+      buildVastWaterfall
+    ], callback);
+  }
+
+  function buildVastWaterfall(xmlStr, callback) {
+    var vastTree;
+    try {
+      vastTree = xml.toJXONTree(xmlStr);
+      logger.debug ("built JXONTree from VAST response:", vastTree);
+
+      if(utilities.isArray(vastTree.ad)) {
+        vastTree.ads = vastTree.ad;
+      } else if(vastTree.ad){
+        vastTree.ads = [vastTree.ad];
+      } else {
+        vastTree.ads = [];
+      }
+      callback(validateVASTTree(vastTree), vastTree);
+
+    } catch (e) {
+      callback(new VASTError("on VASTClient.getVASTAd.buildVastWaterfall, error parsing xml", 100), null);
+    }
+  }
+
+  function validateVASTTree(vastTree) {
+    var vastVersion = xml.attr(vastTree, 'version');
+
+    if (!vastTree.ad) {
+      return new VASTError('on VASTClient.getVASTAd.validateVASTTree, no Ad in VAST tree', 303);
+    }
+
+    if (vastVersion && (vastVersion != 3 && vastVersion != 2)) {
+      return new VASTError('on VASTClient.getVASTAd.validateVASTTree, not supported VAST version "' + vastVersion + '"', 102);
+    }
+
+    return null;
+  }
+
+  function getAd(adTagUrl, adChain, callback) {
+    if (adChain.length >= that.WRAPPER_LIMIT) {
+      return callback(new VASTError("on VASTClient.getVASTAd.getAd, players wrapper limit reached (the limit is " + that.WRAPPER_LIMIT + ")", 302), adChain);
+    }
+
+    async.waterfall([
+      function (next) {
+        if (utilities.isString(adTagUrl)) {
+          requestVASTAd(adTagUrl, next);
+        } else {
+          next(null, adTagUrl);
+        }
+      },
+      buildAd
+    ], function (error, ad) {
+      if (ad) {
+        adChain.push(ad);
+      }
+
+      if (error) {
+        return callback(error, adChain);
+      }
+
+      if (ad.wrapper) {
+        return getAd(ad.wrapper.VASTAdTagURI, adChain, callback);
+      }
+
+      return callback(null, adChain);
+    });
+  }
+
+  function buildAd(adJxonTree, callback) {
+    try {
+      var ad = new Ad(adJxonTree);
+      callback(validateAd(ad), ad);
+    } catch (e) {
+      callback(new VASTError('on VASTClient.getVASTAd.buildAd, error parsing xml', 100), null);
+    }
+  }
+
+  function validateAd(ad) {
+    var wrapper = ad.wrapper;
+    var inLine = ad.inLine;
+    var errMsgPrefix = 'on VASTClient.getVASTAd.validateAd, ';
+
+    if (inLine && wrapper) {
+      return new VASTError(errMsgPrefix +"InLine and Wrapper both found on the same Ad", 101);
+    }
+
+    if (!inLine && !wrapper) {
+      return new VASTError(errMsgPrefix + "nor wrapper nor inline elements found on the Ad", 101);
+    }
+
+    if (inLine && !inLine.isSupported()) {
+      return new VASTError(errMsgPrefix + "could not find MediaFile that is supported by this video player", 403);
+    }
+
+    if (wrapper && !wrapper.VASTAdTagURI) {
+      return new VASTError(errMsgPrefix + "missing 'VASTAdTagURI' in wrapper", 101);
+    }
+
+    return null;
+  }
+
+  function requestVASTAd(adTagUrl, callback) {
+    that._requestVASTXml(adTagUrl, function (error, xmlStr) {
+      if (error) {
+        return callback(error);
+      }
+      try {
+        var vastTree = xml.toJXONTree(xmlStr);
+        callback(validateVASTTree(vastTree), vastTree.ad);
+      } catch (e) {
+        callback(new VASTError("on VASTClient.getVASTAd.requestVASTAd, error parsing xml", 100));
+      }
+    });
+  }
+};
+
+//@deprecated
 VASTClient.prototype.getVASTResponse = function getVASTResponse(adTagUrl, callback) {
   var that = this;
 
@@ -35,7 +224,6 @@ VASTClient.prototype.getVASTResponse = function getVASTResponse(adTagUrl, callba
     }
     throw error;
   }
-
   async.waterfall([
       this._getVASTAd.bind(this, adTagUrl),
       buildVASTResponse
@@ -62,7 +250,7 @@ VASTClient.prototype.getVASTResponse = function getVASTResponse(adTagUrl, callba
     }
   }
 };
-
+//@deprecated
 VASTClient.prototype._getVASTAd = function (adTagUrl, callback) {
   var that = this;
 
@@ -234,7 +422,6 @@ VASTClient.prototype._requestVASTXml = function requestVASTXml(adTagUrl, callbac
         "on VASTClient.requestVastXML, Error getting the the VAST XML with he passed adTagXML fn";
       return callback(new VASTError(errMsg, 301), null);
     }
-
     callback(null, response);
   }
 };

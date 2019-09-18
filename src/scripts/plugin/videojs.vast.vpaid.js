@@ -243,13 +243,52 @@ module.exports = function VASTPlugin(options) {
 
   function playPrerollAd(callback) {
     async.waterfall([
-      getVastResponse,
-      playAd
+      getVastResponse
     ], callback);
   }
 
   function getVastResponse(callback) {
-    vast.getVASTResponse(settings.adTagUrl ? settings.adTagUrl() : settings.adTagXML, callback);
+    function requestHandler(error, response, status) {
+      if (error) {
+        var errMsg = utilities.isDefined(status) ?
+        "on VASTClient.requestVastXML, HTTP request error with status '" + status + "'" :
+          "on VASTClient.requestVastXML, Error getting the the VAST XML with he passed adTagXML fn";
+        return callback(new VASTError(errMsg, 301), null);
+      }
+      const length = response.length;
+      const responsesCollection = [];
+      function seudoCB(err, vastResponse) {
+        responsesCollection.push(vastResponse);
+        if (responsesCollection.length == length) {
+          function repetimos() {
+            console.log('repetimos');
+            console.log(responsesCollection);
+            if (responsesCollection.length > 0) {
+              playAd(responsesCollection.shift(), repetimos);
+            } else {
+              player.trigger('vidoomy-ended-all-ads');
+            }
+          }
+          console.log(responsesCollection);
+          if (responsesCollection.length) {
+            repetimos();
+          } else {
+            return;
+          }
+          /*async.infiniteWaterfall([
+            function (cb) {cb(null, responsesCollection.pop())},
+            playAd
+          ], callback);*/
+         // callback(null, responsesCollection.pop());
+        }
+      }
+
+      response.map(res => {
+        vast.getVASTResponseWithRawXML.bind(vast)(res, seudoCB);
+      });
+    }
+
+    settings.adTagXML(requestHandler);
   }
 
   function playAd(vastResponse, callback) {

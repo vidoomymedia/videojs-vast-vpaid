@@ -24,6 +24,55 @@ async.iterator = function (tasks) {
   return makeCallback(0);
 };
 
+async.infiniteIterator = function (tasks) {
+  var makeCallback = function (index) {
+    var fn = function () {
+      if (tasks.length) {
+        tasks[index].apply(null, arguments);
+      }
+      return fn.next();
+    };
+    fn.next = function () {
+      return (index < tasks.length - 1) ? makeCallback(index + 1) : makeCallback(0);
+    };
+    return fn;
+  };
+  return makeCallback(0);
+};
+
+async.infiniteWaterfall = function (tasks, callback) {
+  callback = callback || function () { };
+  if (!utilities.isArray(tasks)) {
+    var err = new Error('First argument to waterfall must be an array of functions');
+    return callback(err);
+  }
+  if (!tasks.length) {
+    return callback();
+  }
+  var wrapIterator = function (iterator) {
+    return function (err) {
+      if (err) {
+        callback.apply(null, arguments);
+        callback = function () {
+        };
+      }
+      else {
+        var args = Array.prototype.slice.call(arguments, 1);
+        var next = iterator.next();
+        if (next) {
+          args.push(wrapIterator(next));
+        }
+        else {
+          args.push(callback);
+        }
+        async.setImmediate(function () {
+          iterator.apply(null, args);
+        });
+      }
+    };
+  };
+  wrapIterator(async.infiniteIterator(tasks))();
+};
 
 async.waterfall = function (tasks, callback) {
   callback = callback || function () { };
