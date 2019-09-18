@@ -261,25 +261,17 @@ module.exports = function VASTPlugin(options) {
         responsesCollection.push(vastResponse);
         if (responsesCollection.length == length) {
           function repetimos() {
-            console.log('repetimos');
-            console.log(responsesCollection);
             if (responsesCollection.length > 0) {
               playAd(responsesCollection.shift(), repetimos);
             } else {
               player.trigger('vidoomy-ended-all-ads');
             }
           }
-          console.log(responsesCollection);
           if (responsesCollection.length) {
             repetimos();
           } else {
             return;
           }
-          /*async.infiniteWaterfall([
-            function (cb) {cb(null, responsesCollection.pop())},
-            playAd
-          ], callback);*/
-         // callback(null, responsesCollection.pop());
         }
       }
 
