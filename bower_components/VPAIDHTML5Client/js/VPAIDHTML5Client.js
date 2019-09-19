@@ -1,5 +1,5 @@
 'use strict';
-var vidoomyTimeLog = require("../../../../../logger/logger");
+var vidoomyTimeLog = require("../../../../../logger/logger").vidoomyTimeLog;
 
 var utils = require('./utils');
 var unique = utils.unique('vpaidIframe');
@@ -129,21 +129,20 @@ VPAIDHTML5Client.prototype.loadAdUnit = function loadAdUnit(adURL, callback) {
                 that._frame.contentWindow.XMLHttpRequest.prototype.open = function(method, url, async, username, password) {
                     this.key = '[' + Math.floor(Math.random() * 100000) + ']';
                     vidoomyTimeLog('Calling from iframe to url [' + url + ']', '', url, false, this.key );
-                   open.call(this, method, url, async || true, username, password);
+                   return open.apply(this, [].slice.call(arguments));
                 };
               
                 that._frame.contentWindow.XMLHttpRequest.prototype.send = function(data) {
                    //...what ever code you need, i.e. capture response, etc.
                    this.addEventListener('readystatechange', function () {
                     if (this.readyState == 4 && this.status >= 200 && this.status < 300) {
-                        vidoomyTimeLog('Received data from url', this.responseText, this.responseURL, false, this.key );
+                        vidoomyTimeLog('Received data in iframe from url', this.responseText, this.responseURL, false, this.key );
                      }
                    });
-                   send.call(this, data);
-                   // send.apply(this, arguments); // reset/reapply original send method
+                   return send.apply(this, [].slice.call(arguments));
                 }
               
-              })(that._frame.contentWindow.XMLHttpRequest.prototype.open, that._frame.contentWindow.XMLHttpRequest.prototype.send);
+              })(that._frame.contentWindow.XMLHttpRequest.prototype.open,that._frame.contentWindow.XMLHttpRequest.prototype.send);
             adUnit = new VPAIDAdUnit(createAd(), adEl, that._videoEl, that._frame);
             adUnit.subscribe(AD_STOPPED, $adDestroyed.bind(that));
             error = utils.validate(adUnit.isValidVPAIDAd(), 'the add is not fully complaint with VPAID specification');

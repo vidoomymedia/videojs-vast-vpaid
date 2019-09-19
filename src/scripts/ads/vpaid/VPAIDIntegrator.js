@@ -33,6 +33,9 @@ function VPAIDIntegrator(player, settings) {
   };
   this.settings = settings;
 
+  this.finished = false;
+  this.errorOnSetupEvents = false;
+
   /*** Local functions ***/
 
   function createVPAIDContainerEl() {
@@ -48,7 +51,6 @@ VPAIDIntegrator.prototype.playAd = function playVPaidAd(vastResponse, callback) 
   if (!(vastResponse instanceof VASTResponse)) {
     return callback(new VASTError('on VASTIntegrator.playAd, missing required VASTResponse'));
   }
-
   var that = this;
   var player = this.player;
   logger.debug ("<VPAIDIntegrator.playAd> looking for supported tech...");
@@ -354,10 +356,17 @@ VPAIDIntegrator.prototype._setupEvents = function (adUnit, vastResponse, next) {
     player.trigger('vpaid.AdUserMinimize');
     tracker.trackCollapse();
   });
-
+  const myThis = this;
   adUnit.on('AdError', function () {
-    player.trigger('vpaid.AdError');
-    //NOTE: we track errors code 901, as noted in VAST 3.0
+    myThis.errorOnSetupEvents = true;
+    /*  if (!myfunckingthat.finished) {
+        player.trigger('vpaid.MyOwnAdError');
+      
+      console.log('AdError');
+      console.warn(vastResponse.myKeyFuck);
+      adUnit = null;
+      //NOTE: we track errors code 901, as noted in VAST 3.0
+    }*/
     tracker.trackErrorWithCode(901);
   });
 
@@ -413,6 +422,26 @@ VPAIDIntegrator.prototype._setupEvents = function (adUnit, vastResponse, next) {
   function resumeAdUnit() {
     adUnit.resumeAd(utilities.noop);
   }
+
+/*
+  console.log('_finishPlaying');
+  var player = this.player;
+  adUnit.on('AdStopped', function () {
+    console.log('adstopped en finishplaying');
+   player.trigger('vpaid.AdStopped');
+   finishPlayingAd(null);
+  });
+
+  adUnit.on('AdError', function (error) {
+    console.log('AdError en finishplaying');
+    var errMsg = error? error.message : 'on VPAIDIntegrator, error while waiting for the adUnit to finish playing';
+    finishPlayingAd(new VASTError(errMsg));
+  });
+
+  /*** local functions ***
+  function finishPlayingAd(error) {
+    next(error, adUnit, vastResponse);
+  }*/
 };
 
 VPAIDIntegrator.prototype._addSkipButton = function (adUnit, vastResponse, next) {
@@ -532,18 +561,35 @@ VPAIDIntegrator.prototype._startAd = function (adUnit, vastResponse, next) {
 
 VPAIDIntegrator.prototype._finishPlaying = function (adUnit, vastResponse, next) {
   var player = this.player;
+  const myThis = this;
   adUnit.on('AdStopped', function () {
-   player.trigger('vpaid.AdStopped');
-   finishPlayingAd(null);
+    if (!myThis.finished) {
+      myThis.finished = true;
+      player.trigger('vpaid.AdStopped');
+      finishPlayingAd(null);
+    }
   });
 
   adUnit.on('AdError', function (error) {
-    var errMsg = error? error.message : 'on VPAIDIntegrator, error while waiting for the adUnit to finish playing';
-    finishPlayingAd(new VASTError(errMsg));
+    if (!myThis.finished) {
+      myThis.finished = true;
+      var errMsg = error? error.message : 'on VPAIDIntegrator, error while waiting for the adUnit to finish playing';
+      finishPlayingAd(new VASTError(errMsg));
+    }
   });
-
+  let timeout;
+  function checkFirstAdError() {
+    if (myThis.errorOnSetupEvents) {
+      finishPlayingAd();
+    } else {
+      timeout = setTimeout(checkFirstAdError, 100);
+    }
+  }
+  checkFirstAdError();
   /*** local functions ***/
   function finishPlayingAd(error) {
+    clearTimeout(timeout);
+    adUnit = null;
     next(error, adUnit, vastResponse);
   }
 };

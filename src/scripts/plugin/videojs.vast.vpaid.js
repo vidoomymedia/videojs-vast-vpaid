@@ -18,6 +18,7 @@ module.exports = function VASTPlugin(options) {
   var snapshot;
   var player = this;
   var vast = new VASTClient();
+  var vasts = [];
   var adsCanceled = false;
   var defaultOpts = {
     // maximum amount of time in ms to wait to receive `adsready` from the ad
@@ -208,7 +209,7 @@ module.exports = function VASTPlugin(options) {
         trackAdError(new VASTError('timeout while waiting for the video to start playing', 402));
       }, settings.adCancelTimeout);
 
-      playerUtils.once(player, ['vast.adStart', 'vast.adsCancel'], clearAdCancelTimeout);
+      playerUtils.once(player, ['vpaid.AdStarted', 'vast.adStart', 'vast.adsCancel'], clearAdCancelTimeout);
 
       /*** local functions ***/
       function clearAdCancelTimeout() {
@@ -258,26 +259,40 @@ module.exports = function VASTPlugin(options) {
       const length = response.length;
       const responsesCollection = [];
       function seudoCB(err, vastResponse) {
+        let repitiendo = false;
         responsesCollection.push(vastResponse);
         if (responsesCollection.length == length) {
           function repetimos() {
-            if (responsesCollection.length > 0) {
-              playAd(responsesCollection.shift(), repetimos);
-            } else {
-              player.trigger('vidoomy-ended-all-ads');
+            if (!repitiendo) {
+              repitiendo = true;
+              function acabamos() {
+                player.trigger('vidoomy-ended-all-ads');
+              }
+              if (responsesCollection.length > 1) {
+                const response = responsesCollection.shift();
+                playAd(response, function () {repitiendo = false; repetimos()});
+              } else if (responsesCollection.length === 1) {
+                const response = responsesCollection.shift();
+                if (response) {
+                  playAd(response, acabamos);
+                } else {
+                  acabamos();
+                }
+              }
             }
+            
           }
           if (responsesCollection.length) {
             repetimos();
           } else {
-            return;
           }
         }
       }
-
       response.map(res => {
+        vast = new VASTClient();
         vast.getVASTResponseWithRawXML.bind(vast)(res, seudoCB);
       });
+
     }
 
     settings.adTagXML(requestHandler);
@@ -289,7 +304,6 @@ module.exports = function VASTPlugin(options) {
     if (adsCanceled) {
       return;
     }
-
     var adIntegrator = isVPAID(vastResponse) ? new VPAIDIntegrator(player, settings) : new VASTIntegrator(player);
     var adFinished = false;
 
@@ -308,6 +322,10 @@ module.exports = function VASTPlugin(options) {
     player.vast.vastResponse = vastResponse;
     logger.debug ("calling adIntegrator.playAd() with vastResponse:", vastResponse);
     player.vast.adUnit = adIntegrator.playAd(vastResponse, callback);
+    player.on('vpaid.MyOwnAdError', function () {
+      player.vast.adUnit = null;
+      callback();
+    });
 
     /*** Local functions ****/
     function addAdsLabel() {
