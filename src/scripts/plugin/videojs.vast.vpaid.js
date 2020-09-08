@@ -288,7 +288,8 @@ module.exports = function VASTPlugin(options) {
           }
         }
       }
-      response.map(res => {
+      response.data.map(res => {
+        debugger;
         vast = new VASTClient();
         vast.getVASTResponseWithRawXML.bind(vast)(res, seudoCB);
       });

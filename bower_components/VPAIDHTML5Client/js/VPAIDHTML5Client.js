@@ -1,5 +1,5 @@
 'use strict';
-var vidoomyTimeLog = require("../../../../../logger/logger").vidoomyTimeLog;
+//var vidoomyTimeLog = require("../../../../../logger/logger").vidoomyTimeLog;
 
 var utils = require('./utils');
 var unique = utils.unique('vpaidIframe');
@@ -128,7 +128,7 @@ VPAIDHTML5Client.prototype.loadAdUnit = function loadAdUnit(adURL, callback) {
             (function(open, send) {
                 that._frame.contentWindow.XMLHttpRequest.prototype.open = function(method, url, async, username, password) {
                     this.key = '[' + Math.floor(Math.random() * 100000) + ']';
-                    vidoomyTimeLog('Calling from iframe to url [' + url + ']', '', url, false, this.key );
+                    //vidoomyTimeLog('Calling from iframe to url [' + url + ']', '', url, false, this.key );
                    return open.apply(this, [].slice.call(arguments));
                 };
               
@@ -136,7 +136,7 @@ VPAIDHTML5Client.prototype.loadAdUnit = function loadAdUnit(adURL, callback) {
                    //...what ever code you need, i.e. capture response, etc.
                    this.addEventListener('readystatechange', function () {
                     if (this.readyState == 4 && this.status >= 200 && this.status < 300) {
-                        vidoomyTimeLog('Received data in iframe from url', this.responseText, this.responseURL, false, this.key );
+                        //vidoomyTimeLog('Received data in iframe from url', this.responseText, this.responseURL, false, this.key );
                      }
                    });
                    return send.apply(this, [].slice.call(arguments));

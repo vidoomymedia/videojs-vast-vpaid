@@ -65,7 +65,9 @@ VASTClient.prototype.getVASTResponseWithRawXML = function getVASTResponseWithRaw
 
 VASTClient.prototype._getVASTAdWithRawXML = function (adXML, callback) {
   var that = this;
+  console.log('¡asdfasdfasdf');
   getAdWaterfall(adXML, function (error, vastTree) {
+    console.log(error);
     var waterfallAds = vastTree && utilities.isArray(vastTree.ads) ? vastTree.ads : null;
     if (error) {
       that._trackError(error, waterfallAds);
@@ -127,7 +129,7 @@ VASTClient.prototype._getVASTAdWithRawXML = function (adXML, callback) {
       return new VASTError('on VASTClient.getVASTAd.validateVASTTree, no Ad in VAST tree', 303);
     }
 
-    if (vastVersion && (vastVersion != 3 && vastVersion != 2)) {
+    if (vastVersion && (vastVersion > 4.3 && vastVersion < 2)) {
       return new VASTError('on VASTClient.getVASTAd.validateVASTTree, not supported VAST version "' + vastVersion + '"', 102);
     }
 
@@ -314,7 +316,7 @@ VASTClient.prototype._getVASTAd = function (adTagUrl, callback) {
       return new VASTError('on VASTClient.getVASTAd.validateVASTTree, no Ad in VAST tree', 303);
     }
 
-    if (vastVersion && (vastVersion != 3 && vastVersion != 2)) {
+    if (vastVersion && (vastVersion > 4.3 && vastVersion < 2)) {
       return new VASTError('on VASTClient.getVASTAd.validateVASTTree, not supported VAST version "' + vastVersion + '"', 102);
     }
 

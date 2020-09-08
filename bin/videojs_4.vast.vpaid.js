@@ -3583,7 +3583,7 @@ VASTClient.prototype._getVASTAd = function (adTagUrl, callback) {
       return new VASTError('on VASTClient.getVASTAd.validateVASTTree, no Ad in VAST tree', 303);
     }
 
-    if (vastVersion && (vastVersion != 3 && vastVersion != 2)) {
+    if (vastVersion && (vastVersion > 4.3 && vastVersion < 2)) {
       return new VASTError('on VASTClient.getVASTAd.validateVASTTree, not supported VAST version "' + vastVersion + '"', 102);
     }
 
